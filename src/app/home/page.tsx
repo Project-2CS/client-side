@@ -6,5 +6,5 @@ import HomePageMain from ".";
 export default async function Home() {
   const data = await fetchUserFiles();
   const user =  await getUserInfo();
-  return <>{data ? <HomePageMain files={data} userPic={user.profilePicture} /> : <NotFoundPage />}</>;
+  return <>{user ? <HomePageMain files={data} userPic={user.profilePicture} /> : <NotFoundPage />}</>;
 }
