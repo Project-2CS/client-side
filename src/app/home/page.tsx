@@ -8,11 +8,7 @@ export default async function Home() {
   const user = await getUserInfo();
   return (
     <>
-      {user !== false ? (
         <HomePageMain files={data} userPic={user.profilePicture} />
-      ) : (
-        <NotFoundPage />
-      )}
     </>
   );
 }
