@@ -8,6 +8,7 @@ export default async function Profile() {
   
   return (
     <>
+      {data!== false ? (
         <MainProfile
           user={{
             firstName: data.first_name,
@@ -16,6 +17,9 @@ export default async function Profile() {
             profilePic: data.profilePicture,
           }}
         />
+      ) : (
+        <NotFoundPage />
+      )}
     </>
   );
 }
