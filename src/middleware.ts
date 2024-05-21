@@ -8,9 +8,17 @@ export async function middleware(request: NextRequest) {
   if (accessToken) {
     isValidToken = await verify(accessToken);
   }
-  if (!isValidToken && requireAuth.some((path) => pathname.startsWith(path))) {
+
+  if (!isValidToken) {
+    // Delete the cookie
+    const response = NextResponse.next({
+      headers: {
+        cookie: request.headers.get("cookie") || "",
+      },
+    });
+    response.cookies.delete("auth_token");
     // If access token does not exist, redirect to sign-in page
-    return NextResponse.redirect(new URL("/sign-in", request.url));
+    return response;
   } else if (
     isValidToken &&
     requireGuest.some((path) => pathname.startsWith(path))
@@ -34,7 +42,7 @@ const requireGuest = [
 ];
 
 async function verify(accessToken: any) {
-  try {    
+  try {
     await fetch(`http://localhost:8000/verify-token`, {
       headers: {
         Authorization: `Bearer ${accessToken.value}`,

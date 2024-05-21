@@ -8,7 +8,7 @@ export default async function Profile() {
   
   return (
     <>
-      {data!== false ? (
+      {data? (
         <MainProfile
           user={{
             firstName: data.first_name,
