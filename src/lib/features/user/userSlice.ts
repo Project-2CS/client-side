@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../../../lib/store";
 import API from "@/lib/utils/api";
-
+import { deleteCookie } from "cookies-next";
+import { redirect } from "next/navigation";
 interface User {
   first_name: string;
   last_name: string;
@@ -32,7 +33,11 @@ export const fetchUserData = createAsyncThunk(
         return thunkAPI.rejectWithValue("No data found");
       }
     } catch (error: any) {
-      return thunkAPI.rejectWithValue(error.response.data);
+      return thunkAPI.rejectWithValue(
+        error.response.data.detail ??
+          error.response.data.message ??
+          "An error occurred"
+      );
     }
   }
 );
@@ -47,15 +52,11 @@ export const updateUser = createAsyncThunk(
               last_name: user.last_name,
             }
           : user;
-      const response = await API.put(
-        "update-user",
-         body,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const response = await API.put("update-user", body, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       const data = response.data;
       if (data) {
         return data;
@@ -63,11 +64,13 @@ export const updateUser = createAsyncThunk(
         return thunkAPI.rejectWithValue("No data found");
       }
     } catch (error: any) {
-      console.log(error);
-      if (error.response.data.detail) {
-        return thunkAPI.rejectWithValue(error.response.data.detail);
-      }
-      return thunkAPI.rejectWithValue("An error occurred");
+      return thunkAPI.rejectWithValue({
+        error:
+          error.response.data.detail ??
+          error.response.data.message ??
+          "An error occurred",
+        status: error.response.status,
+      });
     }
   }
 );
@@ -95,7 +98,9 @@ export const resetPassword = createAsyncThunk(
         return thunkAPI.rejectWithValue("User not found");
       } else {
         return thunkAPI.rejectWithValue(
-          error.response.data.messages[0].message ?? "An error occurred"
+          error.response.data.detail ??
+            error.response.data.message ??
+            "An error occurred"
         );
       }
     }
@@ -123,10 +128,13 @@ export const updatePassword = createAsyncThunk(
         return thunkAPI.rejectWithValue("No data found");
       }
     } catch (error: any) {
-      if (error.response.data.detail) {
-        return thunkAPI.rejectWithValue(error.response.data.detail);
-      }
-      return thunkAPI.rejectWithValue("An error occurred");
+      return thunkAPI.rejectWithValue({
+        error:
+          error.response.data.detail ??
+          error.response.data.message ??
+          "An error occurred",
+        status: error.response.status,
+      });
     }
   }
 );
@@ -177,7 +185,15 @@ export const userSlice = createSlice({
       })
       .addCase(updateUser.rejected, (state, action: PayloadAction<any>) => {
         state.status = "failed";
-        state.error = action.payload;
+        state.error = action.payload.error;
+        console.log(action.payload.status);
+
+        if (action.payload.status === 401 || action.payload.status === 403) {
+          setTimeout(() => {
+            deleteCookie("auth_token");
+            window.location.pathname = `/sign-in`;
+          }, 2000);
+        }
       })
       .addCase(resetPassword.pending, (state) => {
         state.status = "loading";
@@ -203,7 +219,13 @@ export const userSlice = createSlice({
       )
       .addCase(updatePassword.rejected, (state, action: PayloadAction<any>) => {
         state.status = "failed";
-        state.error = action.payload;
+        state.error = action.payload.error;
+        if (action.payload.status === 401 || action.payload.status === 403) {
+          setTimeout(() => {
+            deleteCookie("auth_token");
+            window.location.pathname = `/sign-in`;
+          }, 2000);
+        }
       });
   },
 });

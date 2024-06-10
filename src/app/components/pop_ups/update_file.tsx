@@ -6,6 +6,8 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/lib/store";
 import { updateDocument } from "@/lib/features/documents/documentSlice";
 import { useState } from "react";
+import useUpdateFile from "@/app/hooks/update_file_hook";
+
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -22,7 +24,20 @@ const UpdateFileModel = ({
 }: UploadModalProps) => {
   const dispatch: AppDispatch = useDispatch();
   const [title, setTitle] = useState(defaultValue);
+  const { handleChange, values, validate, errors } = useUpdateFile({
+    title: "",
+  });
 
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (validate(values)) {
+      dispatch(updateDocument({ id: fileId, title: title })).then(() => {
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000); // 2000 milliseconds = 2 seconds
+      });
+    }
+  };
   return (
     <>
       <Modal
@@ -31,12 +46,14 @@ const UpdateFileModel = ({
           onClose();
         }}
       >
-        <div className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <h2>Update the file</h2>
           <Input
             onChange={(e) => {
               setTitle(e.target.value);
+              handleChange("title", e.target.value);
             }}
+            error={errors.title}
             label="File name"
             placeholder="Enter file name"
             defaultValue={defaultValue}
@@ -51,19 +68,13 @@ const UpdateFileModel = ({
               Cancel
             </button>
             <Button
-              onClick={() => {
-                dispatch(updateDocument({ id: fileId, title: title })).then(
-                  () => {
-                      window.location.reload();
-                  }
-                );
-              }}
+              type="submit"
               className="w-[50%]"
               loading={isLoading}
               text="Submit"
             />
           </div>
-        </div>
+        </form>
       </Modal>
     </>
   );

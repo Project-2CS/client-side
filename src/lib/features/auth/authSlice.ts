@@ -37,20 +37,11 @@ export const login = createAsyncThunk(
         return thunkAPI.rejectWithValue("No data found");
       }
     } catch (error: any) {
-      if (error.response.data.detail) {
-        return thunkAPI.rejectWithValue(error.response.data.detail);
-      }
-      if (error.response.status === 403) {
-        return thunkAPI.rejectWithValue(
-          "User not verified (verification email sent)"
-        );
-      } else if (error.response.status === 404) {
-        return thunkAPI.rejectWithValue("User not found");
-      } else {
-        return thunkAPI.rejectWithValue(
-          error.response.data.messages[0].message ?? "An error occurred"
-        );
-      }
+      return thunkAPI.rejectWithValue(
+        error.response.data.message ??
+          error.response.data.messages[0].message ??
+          "An error occurred"
+      );
     }
   }
 );
@@ -75,14 +66,11 @@ export const signup = createAsyncThunk(
         return thunkAPI.rejectWithValue("No data found");
       }
     } catch (error: any) {
-      if (Array.isArray(error.response.data.email)) {
-        return thunkAPI.rejectWithValue(error.response.data.email[0]);
-      }
-      if (error.response.data.detail) {
-        return thunkAPI.rejectWithValue(error.response.data.detail);
-      } else {
-        return thunkAPI.rejectWithValue("An error occurred");
-      }
+      return thunkAPI.rejectWithValue(
+        error.response.data.message ??
+          error.response.data.detail ??
+          "An error occurred"
+      );
     }
   }
 );
@@ -109,7 +97,6 @@ export const sendResetPassword = createAsyncThunk(
       if (error.response.data.detail) {
         return thunkAPI.rejectWithValue(error.response.data.detail);
       }
-
       if (error.response.status === 404) {
         return thunkAPI.rejectWithValue("User not found");
       } else {

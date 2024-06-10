@@ -2,6 +2,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../../../lib/store";
 import API from "@/lib/utils/api";
+import { deleteCookie } from "cookies-next";
+import { redirect } from "next/navigation";
 
 interface Document {
   id: string;
@@ -35,7 +37,11 @@ export const fetchAllDocuments = createAsyncThunk(
         return thunkAPI.rejectWithValue("No data found");
       }
     } catch (error: any) {
-      return thunkAPI.rejectWithValue(error.response.data);
+      return thunkAPI.rejectWithValue(
+        error.response.data.message ??
+          error.response.data.detail ??
+          "An error has occured !"
+      );
     }
   }
 );
@@ -54,7 +60,11 @@ export const fetchDocument = createAsyncThunk(
         return thunkAPI.rejectWithValue("No data found");
       }
     } catch (error: any) {
-      return thunkAPI.rejectWithValue(error.response.data);
+      return thunkAPI.rejectWithValue(
+        error.response.data.message ??
+          error.response.data.detail ??
+          "An error has occured !"
+      );
     }
   }
 );
@@ -75,7 +85,11 @@ export const addDocument = createAsyncThunk(
       );
       return response.data;
     } catch (error: any) {
-      return thunkAPI.rejectWithValue(error.response.data);
+      return thunkAPI.rejectWithValue(
+        error.response.data.message ??
+          error.response.data.detail ??
+          "An error has occured !"
+      );
     }
   }
 );
@@ -89,10 +103,11 @@ export const updateDocument = createAsyncThunk(
       });
       return response.data;
     } catch (error: any) {
-      if (error.response.data.detail) {
-        return thunkAPI.rejectWithValue(error.response.data.detail);
-      }
-      return thunkAPI.rejectWithValue("Something went wrong!");
+      return thunkAPI.rejectWithValue(
+        error.response.data.detail ??
+          error.response.data.message ??
+          "Something went wrong!"
+      );
     }
   }
 );
@@ -104,12 +119,16 @@ export const deleteDocument = createAsyncThunk(
       const response = await API.delete(`api/file/destroy/${id}/`);
       return response.data;
     } catch (error: any) {
-      console.log(error);
-
-      if (error.response.data.detail) {
-        return thunkAPI.rejectWithValue(error.response.data.detail);
+      if (error.response.status === 401 || error.response.status === 403) {
+        deleteCookie("auth_token");
+        redirect(`/sign-in`);
       }
-      return thunkAPI.rejectWithValue("Something went wrong!");
+
+      return thunkAPI.rejectWithValue(
+        error.response.data.detail ??
+          error.response.data.message ??
+          "Something went wrong!"
+      );
     }
   }
 );
@@ -166,13 +185,10 @@ export const documentsSlice = createSlice({
       .addCase(addDocument.pending, (state) => {
         state.status = "loading";
       })
-      .addCase(
-        addDocument.fulfilled,
-        (state, action: PayloadAction<any>) => {
-          state.status = "succeeded";
-          state.error = null;
-        }
-      )
+      .addCase(addDocument.fulfilled, (state, action: PayloadAction<any>) => {
+        state.status = "succeeded";
+        state.error = null;
+      })
       .addCase(addDocument.rejected, (state, action: PayloadAction<any>) => {
         state.status = "failed";
         state.error = action.payload;

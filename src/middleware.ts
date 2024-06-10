@@ -10,7 +10,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!isValidToken) {
-    // Delete the cookie
+    // Delete the cookie    
     const response = NextResponse.next({
       headers: {
         cookie: request.headers.get("cookie") || "",
@@ -49,7 +49,7 @@ async function verify(accessToken: any) {
       },
     });
     return true;
-  } catch (error: any) {
+  } catch (error: any) {    
     return false;
   }
 }
